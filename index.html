@@ -2,41 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=0.50">
     <title>Ultra-Modern Chat System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     <style>
         :root {
-            --primary-color: #3b82f6;
-            --secondary-color: #60a5fa;
+            --primary-color: #4f46e5;
+            --secondary-color: #818cf8;
             --background-color: #f3f4f6;
             --text-color: #1f2937;
             --light-text: #6b7280;
             --border-color: #e5e7eb;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: var(--background-color);
             color: var(--text-color);
+            margin: 0;
+            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            height: 100vh;
         }
 
         #chat-container {
             width: 95%;
-            max-width: 1200px;
+            max-width: 1000px;
             height: 90vh;
-            border-radius: 20px;
+            border-radius: 16px;
             background-color: #fff;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             display: grid;
@@ -58,27 +54,19 @@
 
         #search-input {
             flex-grow: 1;
-            padding: 12px 15px;
+            padding: 10px 15px;
             border: 1px solid var(--border-color);
-            border-radius: 10px;
+            border-radius: 8px;
             font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        #search-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
 
         .contact {
             display: flex;
             align-items: center;
-            padding: 12px;
-            border-radius: 10px;
+            padding: 10px;
+            border-radius: 8px;
             cursor: pointer;
             transition: background-color 0.3s;
-            margin-bottom: 10px;
         }
 
         .contact:hover {
@@ -86,8 +74,8 @@
         }
 
         .contact img {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             margin-right: 15px;
             object-fit: cover;
@@ -98,7 +86,7 @@
         }
 
         .contact-name {
-            font-weight: 600;
+            font-weight: 500;
             margin-bottom: 3px;
         }
 
@@ -114,7 +102,7 @@
 
         #header {
             background-color: #fff;
-            padding: 20px;
+            padding: 15px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -127,8 +115,8 @@
         }
 
         #header img {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             margin-right: 15px;
             object-fit: cover;
@@ -136,14 +124,14 @@
 
         #header h1 {
             margin: 0;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 600;
         }
 
         #header-actions i {
             margin-left: 20px;
             cursor: pointer;
-            font-size: 20px;
+            font-size: 18px;
             color: var(--light-text);
             transition: color 0.3s;
         }
@@ -160,7 +148,7 @@
         }
 
         #typing-indicator {
-            font-size: 14px;
+            font-size: 12px;
             color: var(--light-text);
             margin-bottom: 10px;
             font-style: italic;
@@ -169,24 +157,23 @@
 
         #message-input-container {
             display: flex;
-            padding: 20px;
+            padding: 15px;
             background-color: #fff;
             border-top: 1px solid var(--border-color);
         }
 
         #message-input {
             flex: 1;
-            padding: 15px;
+            padding: 12px 15px;
             border: 1px solid var(--border-color);
             border-radius: 25px;
             outline: none;
-            font-size: 16px;
-            transition: all 0.3s ease;
+            font-size: 14px;
+            transition: border-color 0.3s;
         }
 
         #message-input:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
 
         #send-button {
@@ -194,59 +181,56 @@
             color: #fff;
             border: none;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            margin-left: 15px;
+            width: 45px;
+            height: 45px;
+            margin-left: 10px;
             cursor: pointer;
-            font-size: 20px;
+            font-size: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
+            transition: background-color 0.3s;
         }
 
         #send-button:hover {
             background-color: var(--secondary-color);
-            transform: scale(1.05);
         }
 
         .message {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             display: flex;
             align-items: flex-end;
         }
 
         .message.sender {
-            justify-content: flex-end;
+            justify-content: flex-end; /* Aligns the sender's messages to the right */
         }
 
         .message.receiver {
-            justify-content: flex-start;
+            justify-content: flex-start; /* Aligns the receiver's messages to the left */
         }
 
         .message-content {
             max-width: 70%;
-            padding: 15px 20px;
-            border-radius: 20px;
+            padding: 12px 16px;
+            border-radius: 18px;
             position: relative;
-            font-size: 16px;
-            line-height: 1.5;
+            font-size: 14px;
+            line-height: 1.4;
         }
 
         .message.sender .message-content {
             background-color: var(--primary-color);
             color: #fff;
-            border-bottom-right-radius: 5px;
         }
 
         .message.receiver .message-content {
             background-color: #f3f4f6;
             color: var(--text-color);
-            border-bottom-left-radius: 5px;
         }
 
         .message-time {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--light-text);
             margin-top: 5px;
         }
@@ -263,31 +247,6 @@
         .message {
             animation: fadeIn 0.3s ease-out;
         }
-
-        @media (max-width: 768px) {
-            #chat-container {
-                grid-template-columns: 1fr;
-                height: 100vh;
-                width: 100%;
-                border-radius: 0;
-            }
-
-            #sidebar {
-                display: none;
-            }
-
-            #header h1 {
-                font-size: 18px;
-            }
-
-            #message-input {
-                font-size: 14px;
-            }
-
-            .message-content {
-                font-size: 14px;
-            }
-        }
     </style>
 </head>
 <body>
@@ -303,7 +262,7 @@
         <div id="chat-area">
             <div id="header">
                 <div id="header-left">
-                    <img src="https://via.placeholder.com/50" alt="Profile Picture">
+                    <img src="https://via.placeholder.com/40" alt="Profile Picture">
                     <h1>Chat with <span id="contact-name">User</span></h1>
                 </div>
                 <div id="header-actions">
