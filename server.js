@@ -14,7 +14,7 @@ const mongoURI = process.env.MONGO_URI;
 
 // Configure CORS to allow requests from your GitHub Pages URL
 app.use(cors({
-    origin: 'https://paradox974333.github.io/chat/', // Replace with your actual GitHub Pages URL
+    origin: 'https://paradox974333.github.io', // Replace with your actual GitHub Pages URL
     methods: ['GET', 'POST'],
 }));
 
