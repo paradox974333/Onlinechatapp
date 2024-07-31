@@ -9,20 +9,18 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
+// Enable CORS
+app.use(cors({
+    origin: 'https://paradox974333.github.io', // Replace with your frontend URL
+    methods: ['GET', 'POST'],
+    credentials: true
+}));
+
 const port = process.env.PORT || 3000;
 const mongoURI = process.env.MONGO_URI;
 
-// Configure CORS to allow requests from your GitHub Pages URL
-app.use(cors({
-    origin: 'https://paradox974333.github.io', // Replace with your actual GitHub Pages URL
-    methods: ['GET', 'POST'],
-}));
-
 // Connect to MongoDB
-mongoose.connect(mongoURI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
+mongoose.connect(mongoURI)
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.error('MongoDB connection error:', err));
 
@@ -35,7 +33,7 @@ const messageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model('Message', messageSchema);
 
-// Serve static files from the "public" directory
+// Serve static files
 app.use(express.static('public'));
 
 // WebSocket connection handling
@@ -47,7 +45,6 @@ io.on('connection', (socket) => {
         const message = new Message({ sender, receiver, content });
         await message.save();
 
-        // Broadcast message to all connected clients
         io.emit('receiveMessage', message);
     });
 
