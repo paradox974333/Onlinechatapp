@@ -11,7 +11,7 @@ const io = socketIo(server);
 
 // Enable CORS
 app.use(cors({
-    origin: 'https://paradox974333.github.io', // Replace with your frontend URL
+    origin: 'https://paradox974333.github.io/chat/', // Replace with your frontend URL
     methods: ['GET', 'POST'],
     credentials: true
 }));
