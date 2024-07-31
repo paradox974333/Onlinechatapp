@@ -1,63 +1,62 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
+require('dotenv').config(); // Load environment variables from .env file
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-app.use(cors());
-app.use(express.json());
+const port = process.env.PORT || 3000;
+const mongoURI = process.env.MONGO_URI;
 
-const users = {}; // Store connected users with their socket IDs
+// Configure CORS to allow requests from your GitHub Pages URL
+app.use(cors({
+    origin: 'https://your-github-pages-url.github.io', // Replace with your actual GitHub Pages URL
+    methods: ['GET', 'POST'],
+}));
 
+// Connect to MongoDB
+mongoose.connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+    .then(() => console.log('MongoDB connected'))
+    .catch(err => console.error('MongoDB connection error:', err));
+
+// Define schema and model for messages
+const messageSchema = new mongoose.Schema({
+    sender: String,
+    receiver: String,
+    content: String,
+    timestamp: { type: Date, default: Date.now }
+});
+const Message = mongoose.model('Message', messageSchema);
+
+// Serve static files from the "public" directory
+app.use(express.static('public'));
+
+// WebSocket connection handling
 io.on('connection', (socket) => {
     console.log('New client connected');
 
-    // Handle user login
-    socket.on('login', (userId) => {
-        users[userId] = socket.id;
-        console.log(`User ${userId} connected`);
-        // Notify other users that this user has connected
-        socket.broadcast.emit('userConnected', userId);
+    socket.on('sendMessage', async (data) => {
+        const { sender, receiver, content } = data;
+        const message = new Message({ sender, receiver, content });
+        await message.save();
+
+        // Broadcast message to all connected clients
+        io.emit('receiveMessage', message);
     });
 
-    // Handle sending messages
-    socket.on('sendMessage', (messageData) => {
-        const { sender, receiver, content } = messageData;
-        if (users[receiver]) {
-            io.to(users[receiver]).emit('receiveMessage', {
-                sender,
-                content,
-                timestamp: new Date()
-            });
-        }
-    });
-
-    // Handle typing status
-    socket.on('typing', (userId) => {
-        socket.broadcast.emit('typing', userId);
-    });
-
-    socket.on('stopTyping', () => {
-        socket.broadcast.emit('stopTyping');
-    });
-
-    // Handle disconnect
     socket.on('disconnect', () => {
         console.log('Client disconnected');
-        // Remove user from the users list
-        for (let userId in users) {
-            if (users[userId] === socket.id) {
-                delete users[userId];
-                break;
-            }
-        }
     });
 });
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// Start the server
+server.listen(port, () => {
+    console.log(`Server running on port ${port}`);
 });
