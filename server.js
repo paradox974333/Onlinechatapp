@@ -3,24 +3,26 @@ const mongoose = require('mongoose');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
-
-// Enable CORS
-app.use(cors({
-    origin: 'https://paradox974333.github.io/chat/', // Replace with your frontend URL
-    methods: ['GET', 'POST'],
-    credentials: true
-}));
+const io = socketIo(server, {
+    cors: {
+        origin: 'https://paradox974333.github.io', // Adjust this origin as needed
+        methods: ['GET', 'POST'],
+        allowedHeaders: ['Content-Type']
+    }
+});
 
 const port = process.env.PORT || 3000;
 const mongoURI = process.env.MONGO_URI;
 
 // Connect to MongoDB
-mongoose.connect(mongoURI)
+mongoose.connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.error('MongoDB connection error:', err));
 
@@ -32,6 +34,13 @@ const messageSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now }
 });
 const Message = mongoose.model('Message', messageSchema);
+
+// Enable CORS
+app.use(cors({
+    origin: 'https://paradox974333.github.io', // Adjust this origin as needed
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type']
+}));
 
 // Serve static files
 app.use(express.static('public'));
