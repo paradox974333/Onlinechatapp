@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultra-Modern Chat System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #818cf8;
+            --background-color: #f3f4f6;
+            --text-color: #1f2937;
+            --light-text: #6b7280;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #chat-container {
+            width: 95%;
+            max-width: 1000px;
+            height: 90vh;
+            border-radius: 16px;
+            background-color: #fff;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            overflow: hidden;
+        }
+
+        #sidebar {
+            background-color: #f9fafb;
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        #search-bar {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        #search-input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .contact {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .contact:hover {
+            background-color: #f3f4f6;
+        }
+
+        .contact img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+
+        .contact-info {
+            flex-grow: 1;
+        }
+
+        .contact-name {
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+
+        .contact-last-message {
+            font-size: 12px;
+            color: var(--light-text);
+        }
+
+        #chat-area {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #header {
+            background-color: #fff;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        #header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        #header img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+
+        #header h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        #header-actions i {
+            margin-left: 20px;
+            cursor: pointer;
+            font-size: 18px;
+            color: var(--light-text);
+            transition: color 0.3s;
+        }
+
+        #header-actions i:hover {
+            color: var(--primary-color);
+        }
+
+        #messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #fff;
+        }
+
+        #typing-indicator {
+            font-size: 12px;
+            color: var(--light-text);
+            margin-bottom: 10px;
+            font-style: italic;
+            padding: 0 20px;
+        }
+
+        #message-input-container {
+            display: flex;
+            padding: 15px;
+            background-color: #fff;
+            border-top: 1px solid var(--border-color);
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        #message-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        #send-button {
+            background-color: var(--primary-color);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+
+        #send-button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .message.sender {
+            justify-content: flex-end; /* Aligns the sender's messages to the right */
+        }
+
+        .message.receiver {
+            justify-content: flex-start; /* Aligns the receiver's messages to the left */
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .message.sender .message-content {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+
+        .message.receiver .message-content {
+            background-color: #f3f4f6;
+            color: var(--text-color);
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: var(--light-text);
+            margin-top: 5px;
+        }
+
+        .message.sender .message-time {
+            text-align: right;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="sidebar">
+            <div id="search-bar">
+                <input type="text" id="search-input" placeholder="Search contacts...">
+            </div>
+            <div id="contacts-list">
+                <!-- Contacts will be dynamically added here -->
+            </div>
+        </div>
+        <div id="chat-area">
+            <div id="header">
+                <div id="header-left">
+                    <img src="https://via.placeholder.com/40" alt="Profile Picture">
+                    <h1>Chat with <span id="contact-name">User</span></h1>
+                </div>
+                <div id="header-actions">
+                    <i class="fa fa-info-circle"></i>
+                    <i class="fa fa-cog"></i>
+                </div>
+            </div>
+            <div id="messages">
+                <div id="typing-indicator"></div>
+            </div>
+            <div id="message-input-container">
+                <input type="text" id="message-input" placeholder="Type a message...">
+                <button id="send-button"><i class="fa fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.min.js"></script>
+    <script>
+        const socket = io('http://localhost:5000'); // Change this to your server URL
+        const userId = prompt('Enter your user ID (User1/User2)'); // Prompt user for ID
+        const contactId = userId === 'User1' ? 'User2' : 'User1'; // Set contact ID based on current user
+
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const messagesContainer = document.getElementById('messages');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const contactName = document.getElementById('contact-name');
+
+        socket.emit('login', userId);
+
+        sendButton.addEventListener('click', () => {
+            const message = messageInput.value.trim();
+            if (message) {
+                const messageData = {
+                    sender: userId,
+                    receiver: contactId,
+                    content: message
+                };
+                socket.emit('sendMessage', messageData);
+                messageInput.value = '';
+            }
+        });
+
+        socket.on('receiveMessage', (message) => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.classList.add(message.sender === userId ? 'sender' : 'receiver');
+            messageElement.innerHTML = `
+                <div class="message-content">
+                    ${message.content}
+                    <div class="message-time">${new Date(message.timestamp).toLocaleTimeString()}</div>
+                </div>
+            `;
+            messagesContainer.appendChild(messageElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        });
+
+        messageInput.addEventListener('input', () => {
+            socket.emit('typing', userId);
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                socket.emit('stopTyping');
+            }, 2000);
+        });
+
+        let typingTimeout;
+        socket.on('typing', (userId) => {
+            typingIndicator.textContent = `${userId} is typing...`;
+        });
+
+        socket.on('stopTyping', () => {
+            typingIndicator.textContent = '';
+        });
+    </script>
+</body>
+</html>
