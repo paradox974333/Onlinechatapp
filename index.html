@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Mobile Chat</title>
+    <title>Futuristic Mobile Chat</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     <style>
         :root {
-            --primary-color: #3498db;
-            --secondary-color: #2980b9;
-            --background-color: #f4f6f8;
-            --text-color: #2c3e50;
-            --light-text: #7f8c8d;
-            --border-color: #ecf0f1;
+            --primary-color: #00bcd4;
+            --secondary-color: #009688;
+            --background-color: #121212;
+            --text-color: #ffffff;
+            --light-text: #b0bec5;
+            --border-color: #212121;
         }
 
         * {
@@ -32,10 +32,11 @@
         #app {
             max-width: 500px;
             margin: 0 auto;
-            background-color: #fff;
+            background-color: #1e1e1e;
             height: 100vh;
             display: flex;
             flex-direction: column;
+            box-shadow: 0 0 20px rgba(0, 188, 212, 0.3);
         }
 
         #header {
@@ -45,28 +46,57 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            border-bottom: 2px solid var(--secondary-color);
         }
 
         #header h1 {
             font-size: 1.2rem;
             font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         #header-actions i {
             margin-left: 15px;
             cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        #header-actions i:hover {
+            color: var(--secondary-color);
         }
 
         #messages {
             flex: 1;
             overflow-y: auto;
             padding: 15px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--secondary-color) var(--background-color);
+        }
+
+        #messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #messages::-webkit-scrollbar-track {
+            background: var(--background-color);
+        }
+
+        #messages::-webkit-scrollbar-thumb {
+            background-color: var(--secondary-color);
+            border-radius: 3px;
         }
 
         .message {
             margin-bottom: 15px;
             display: flex;
             flex-direction: column;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .message.sender {
@@ -78,7 +108,7 @@
             padding: 10px 15px;
             border-radius: 18px;
             font-size: 0.9rem;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
 
         .message.sender .message-content {
@@ -88,7 +118,7 @@
         }
 
         .message.receiver .message-content {
-            background-color: var(--background-color);
+            background-color: #2a2a2a;
             border-bottom-left-radius: 4px;
         }
 
@@ -108,7 +138,7 @@
         #message-input-container {
             display: flex;
             padding: 15px;
-            background-color: #fff;
+            background-color: #1e1e1e;
             border-top: 1px solid var(--border-color);
         }
 
@@ -119,6 +149,13 @@
             border-radius: 20px;
             outline: none;
             font-size: 0.9rem;
+            background-color: #2a2a2a;
+            color: var(--text-color);
+            transition: border-color 0.3s ease;
+        }
+
+        #message-input:focus {
+            border-color: var(--primary-color);
         }
 
         #send-button {
@@ -133,9 +170,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: background-color 0.3s ease;
         }
 
-        #send-button:active {
+        #send-button:hover {
             background-color: var(--secondary-color);
         }
 
@@ -218,7 +256,9 @@
         }
 
         socket.on('receiveMessage', (message) => {
-            addMessageToUI(message, false);
+            if (message.sender !== userId) {
+                addMessageToUI(message, false);
+            }
         });
 
         let typingTimeout;
@@ -230,8 +270,10 @@
             }, 2000);
         });
 
-        socket.on('typing', (userId) => {
-            typingIndicator.textContent = `${userId} is typing...`;
+        socket.on('typing', (typingUserId) => {
+            if (typingUserId !== userId) {
+                typingIndicator.textContent = `${contactId} is typing...`;
+            }
         });
 
         socket.on('stopTyping', () => {
