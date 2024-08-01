@@ -201,7 +201,7 @@
             <div id="typing-indicator"></div>
         </div>
         <div id="message-input-container">
-            <input type="text" id="message-input" placeholder="iMessage">
+            <input type="text" id="message-input" placeholder="Type a message">
             <button id="send-button" disabled>Send</button>
         </div>
     </div>
@@ -232,7 +232,7 @@
             contactId = userId === 'User1' ? 'User2' : 'User1';
             contactName.textContent = contactId;
             userSelectModal.style.display = 'none';
-            socket.emit('login', userId);
+            socket.emit('identify', userId);
         }
 
         sendButton.addEventListener('click', sendMessage);
@@ -269,11 +269,17 @@
                 <div class="message-content">
                     ${message.content}
                 </div>
-                <div class="message-time">${new Date().toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'})}</div>
+                <div class="message-time">${new Date(message.timestamp).toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'})}</div>
             `;
             messagesContainer.appendChild(messageElement);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
+
+        socket.on('previousMessages', (messages) => {
+            messages.forEach(message => {
+                addMessageToUI(message, message.sender === userId);
+            });
+        });
 
         socket.on('receiveMessage', (message) => {
             if (message.sender !== userId) {
@@ -283,36 +289,23 @@
 
         let typingTimeout;
         messageInput.addEventListener('input', () => {
-            socket.emit('typing', userId);
-            clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(() => {
-                socket.emit('stopTyping');
-            }, 1000);
-        });
+                socket.emit('typing', userId);
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            socket.emit('stopTyping');
+        }, 1000);
+    });
 
-        socket.on('typing', (typingUserId) => {
-            if (typingUserId !== userId) {
-                typingIndicator.textContent = `${contactId} is typing...`;
-            }
-        });
+    socket.on('typing', (userId) => {
+        if (userId !== userId) {
+            typingIndicator.textContent = 'User is typing...';
+        }
+    });
 
-        socket.on('stopTyping', () => {
-            typingIndicator.textContent = '';
-        });
-
-        // Prevent zoom
-        document.addEventListener('touchmove', function (event) {
-            if (event.scale !== 1) {
-                event.preventDefault();
-            }
-        }, { passive: false });
-
-        // Prevent default touch behavior
-        document.addEventListener('touchstart', function(event) {
-            if (event.touches.length > 1) {
-                event.preventDefault();
-            }
-        }, { passive: false });
-    </script>
+    socket.on('stopTyping', () => {
+        typingIndicator.textContent = '';
+    });
+</script>
 </body>
 </html>
+
