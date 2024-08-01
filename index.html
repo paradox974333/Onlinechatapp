@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=0.50">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ultra-Modern Chat System</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
@@ -30,9 +30,9 @@
 
         #chat-container {
             width: 95%;
-            max-width: 1000px;
+            max-width: 1200px;
             height: 90vh;
-            border-radius: 16px;
+            border-radius: 20px;
             background-color: #fff;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             display: grid;
@@ -54,28 +54,36 @@
 
         #search-input {
             flex-grow: 1;
-            padding: 10px 15px;
+            padding: 12px 15px;
             border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        #search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
 
         .contact {
             display: flex;
             align-items: center;
-            padding: 10px;
-            border-radius: 8px;
+            padding: 12px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
         }
 
         .contact:hover {
             background-color: #f3f4f6;
+            transform: translateY(-2px);
         }
 
         .contact img {
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             margin-right: 15px;
             object-fit: cover;
@@ -86,7 +94,7 @@
         }
 
         .contact-name {
-            font-weight: 500;
+            font-weight: 600;
             margin-bottom: 3px;
         }
 
@@ -102,7 +110,7 @@
 
         #header {
             background-color: #fff;
-            padding: 15px 20px;
+            padding: 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -115,8 +123,8 @@
         }
 
         #header img {
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             margin-right: 15px;
             object-fit: cover;
@@ -124,14 +132,14 @@
 
         #header h1 {
             margin: 0;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 600;
         }
 
         #header-actions i {
             margin-left: 20px;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 20px;
             color: var(--light-text);
             transition: color 0.3s;
         }
@@ -157,23 +165,24 @@
 
         #message-input-container {
             display: flex;
-            padding: 15px;
+            padding: 20px;
             background-color: #fff;
             border-top: 1px solid var(--border-color);
         }
 
         #message-input {
             flex: 1;
-            padding: 12px 15px;
+            padding: 14px 18px;
             border: 1px solid var(--border-color);
             border-radius: 25px;
             outline: none;
             font-size: 14px;
-            transition: border-color 0.3s;
+            transition: all 0.3s ease;
         }
 
         #message-input:focus {
             border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
 
         #send-button {
@@ -181,52 +190,56 @@
             color: #fff;
             border: none;
             border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            margin-left: 10px;
+            width: 50px;
+            height: 50px;
+            margin-left: 15px;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
         }
 
         #send-button:hover {
             background-color: var(--secondary-color);
+            transform: scale(1.05);
         }
 
         .message {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             display: flex;
             align-items: flex-end;
         }
 
         .message.sender {
-            justify-content: flex-end; /* Aligns the sender's messages to the right */
+            justify-content: flex-end;
         }
 
         .message.receiver {
-            justify-content: flex-start; /* Aligns the receiver's messages to the left */
+            justify-content: flex-start;
         }
 
         .message-content {
             max-width: 70%;
-            padding: 12px 16px;
+            padding: 14px 18px;
             border-radius: 18px;
             position: relative;
             font-size: 14px;
-            line-height: 1.4;
+            line-height: 1.5;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         }
 
         .message.sender .message-content {
             background-color: var(--primary-color);
             color: #fff;
+            border-bottom-right-radius: 4px;
         }
 
         .message.receiver .message-content {
             background-color: #f3f4f6;
             color: var(--text-color);
+            border-bottom-left-radius: 4px;
         }
 
         .message-time {
@@ -262,7 +275,7 @@
         <div id="chat-area">
             <div id="header">
                 <div id="header-left">
-                    <img src="https://via.placeholder.com/40" alt="Profile Picture">
+                    <img src="https://via.placeholder.com/48" alt="Profile Picture">
                     <h1>Chat with <span id="contact-name">User</span></h1>
                 </div>
                 <div id="header-actions">
@@ -294,7 +307,14 @@
 
         socket.emit('login', userId);
 
-        sendButton.addEventListener('click', () => {
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
             const message = messageInput.value.trim();
             if (message) {
                 const messageData = {
@@ -305,7 +325,7 @@
                 socket.emit('sendMessage', messageData);
                 messageInput.value = '';
             }
-        });
+        }
 
         socket.on('receiveMessage', (message) => {
             const messageElement = document.createElement('div');
@@ -321,6 +341,7 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         });
 
+        let typingTimeout;
         messageInput.addEventListener('input', () => {
             socket.emit('typing', userId);
             clearTimeout(typingTimeout);
@@ -329,13 +350,33 @@
             }, 2000);
         });
 
-        let typingTimeout;
         socket.on('typing', (userId) => {
             typingIndicator.textContent = `${userId} is typing...`;
         });
 
         socket.on('stopTyping', () => {
             typingIndicator.textContent = '';
+        });
+
+        // Simulate some contacts (you can replace this with actual data)
+        const contacts = [
+            { name: 'Alice', lastMessage: 'Hey there!', img: 'https://via.placeholder.com/48' },
+            { name: 'Bob', lastMessage: 'How are you?', img: 'https://via.placeholder.com/48' },
+            { name: 'Charlie', lastMessage: 'See you later', img: 'https://via.placeholder.com/48' },
+        ];
+
+        const contactsList = document.getElementById('contacts-list');
+        contacts.forEach(contact => {
+            const contactElement = document.createElement('div');
+            contactElement.classList.add('contact');
+            contactElement.innerHTML = `
+                <img src="${contact.img}" alt="${contact.name}">
+                <div class="contact-info">
+                    <div class="contact-name">${contact.name}</div>
+                    <div class="contact-last-message">${contact.lastMessage}</div>
+                </div>
+            `;
+            contactsList.appendChild(contactElement);
         });
     </script>
 </body>
