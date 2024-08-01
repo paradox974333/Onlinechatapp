@@ -232,7 +232,7 @@
             contactId = userId === 'User1' ? 'User2' : 'User1';
             contactName.textContent = contactId;
             userSelectModal.style.display = 'none';
-            socket.emit('identify', userId);
+            socket.emit('login', userId);
         }
 
         sendButton.addEventListener('click', sendMessage);
@@ -244,6 +244,11 @@
 
         messageInput.addEventListener('input', () => {
             sendButton.disabled = messageInput.value.trim().length === 0;
+            socket.emit('typing', userId);
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                socket.emit('stopTyping');
+            }, 1000);
         });
 
         function sendMessage() {
@@ -258,6 +263,7 @@
                 addMessageToUI(messageData, true);
                 messageInput.value = '';
                 sendButton.disabled = true;
+                socket.emit('stopTyping');
             }
         }
 
@@ -287,25 +293,18 @@
             }
         });
 
-        let typingTimeout;
-        messageInput.addEventListener('input', () => {
-                socket.emit('typing', userId);
-        clearTimeout(typingTimeout);
-        typingTimeout = setTimeout(() => {
-            socket.emit('stopTyping');
-        }, 1000);
-    });
-
-    socket.on('typing', (userId) => {
-        if (userId !== userId) {
-            typingIndicator.textContent = 'User is typing...';
-        }
-    });
+        socket.on('typing’, (userId) => {
+if (userId !== userId) {
+typingIndicator.textContent = ‘User is typing…’;
+}
+});
 
     socket.on('stopTyping', () => {
         typingIndicator.textContent = '';
     });
+
+    let typingTimeout;
 </script>
+
 </body>
 </html>
-
