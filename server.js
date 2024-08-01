@@ -45,46 +45,52 @@ app.use(cors({
 // Serve static files
 app.use(express.static('public'));
 
+const users = {};
+
 // WebSocket connection handling
 io.on('connection', (socket) => {
     console.log('New client connected');
 
-    socket.on('identify', async (userId) => {
-        try {
-            const messages = await Message.find({
-                $or: [
-                    { sender: userId },
-                    { receiver: userId }
-                ]
-            }).sort({ timestamp: 1 });
-
+    socket.on('login', (userId) => {
+        users[socket.id] = userId;
+        io.emit('userStatus', { userId, status: 'online' });
+        // Send previous messages to the user
+        Message.find({
+            $or: [
+                { sender: userId },
+                { receiver: userId }
+            ]
+        }).sort({ timestamp: 1 }).exec((err, messages) => {
+            if (err) {
+                console.error('Error fetching messages:', err);
+                return;
+            }
             socket.emit('previousMessages', messages);
-        } catch (err) {
-            console.error('Error fetching previous messages:', err);
-        }
+        });
     });
 
     socket.on('sendMessage', async (data) => {
-        try {
-            const { sender, receiver, content } = data;
-            const message = new Message({ sender, receiver, content });
-            await message.save();
+        const { sender, receiver, content } = data;
+        const message = new Message({ sender, receiver, content });
+        await message.save();
 
-            io.emit('receiveMessage', message);
-        } catch (err) {
-            console.error('Error saving message:', err);
-        }
+        io.emit('receiveMessage', message);
     });
 
     socket.on('typing', (userId) => {
-        socket.broadcast.emit('typing', userId);
+        const typingUser = users[socket.id];
+        io.emit('typing', typingUser);
     });
 
     socket.on('stopTyping', () => {
-        socket.broadcast.emit('stopTyping');
+        const typingUser = users[socket.id];
+        io.emit('stopTyping', typingUser);
     });
 
     socket.on('disconnect', () => {
+        const userId = users[socket.id];
+        io.emit('userStatus', { userId, status: 'offline' });
+        delete users[socket.id];
         console.log('Client disconnected');
     });
 });
