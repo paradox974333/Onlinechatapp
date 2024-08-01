@@ -49,12 +49,39 @@ app.use(express.static('public'));
 io.on('connection', (socket) => {
     console.log('New client connected');
 
-    socket.on('sendMessage', async (data) => {
-        const { sender, receiver, content } = data;
-        const message = new Message({ sender, receiver, content });
-        await message.save();
+    socket.on('identify', async (userId) => {
+        try {
+            const messages = await Message.find({
+                $or: [
+                    { sender: userId },
+                    { receiver: userId }
+                ]
+            }).sort({ timestamp: 1 });
 
-        io.emit('receiveMessage', message);
+            socket.emit('previousMessages', messages);
+        } catch (err) {
+            console.error('Error fetching previous messages:', err);
+        }
+    });
+
+    socket.on('sendMessage', async (data) => {
+        try {
+            const { sender, receiver, content } = data;
+            const message = new Message({ sender, receiver, content });
+            await message.save();
+
+            io.emit('receiveMessage', message);
+        } catch (err) {
+            console.error('Error saving message:', err);
+        }
+    });
+
+    socket.on('typing', (userId) => {
+        socket.broadcast.emit('typing', userId);
+    });
+
+    socket.on('stopTyping', () => {
+        socket.broadcast.emit('stopTyping');
     });
 
     socket.on('disconnect', () => {
