@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -77,6 +76,7 @@
             display: flex;
             flex-direction: column;
             animation: fadeIn 0.2s ease-out;
+            position: relative;
         }
 
         @keyframes fadeIn {
@@ -114,6 +114,40 @@
             margin-top: 2px;
             margin-left: 4px;
             margin-right: 4px;
+        }
+
+        .message-options {
+            position: absolute;
+            top: 0;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .message.sender .message-options {
+            right: 100%;
+            margin-right: 5px;
+        }
+
+        .message.receiver .message-options {
+            left: 100%;
+            margin-left: 5px;
+        }
+
+        .message:hover .message-options {
+            opacity: 1;
+        }
+
+        .option-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--light-text);
+            margin: 0 2px;
+            font-size: 12px;
+        }
+
+        .option-btn:hover {
+            color: var(--primary-color);
         }
 
         #typing-indicator {
@@ -161,7 +195,7 @@
             cursor: default;
         }
 
-        #user-select-modal {
+        #user-select-modal, #edit-modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -174,7 +208,7 @@
             z-index: 1000;
         }
 
-        #user-select-container {
+        #user-select-container, #edit-container {
             background-color: white;
             padding: 20px;
             border-radius: 10px;
@@ -190,6 +224,49 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+        }
+
+        #edit-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .modal-btn {
+            padding: 8px 16px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .cancel-btn {
+            background-color: #E5E5EA;
+            color: black;
+        }
+
+        .save-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        #notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 2000;
+            display: none;
         }
     </style>
 </head>
@@ -215,11 +292,25 @@
         </div>
     </div>
 
+    <div id="edit-modal" style="display: none;">
+        <div id="edit-container">
+            <h2>Edit Message</h2>
+            <input type="text" id="edit-input">
+            <div class="modal-buttons">
+                <button class="modal-btn cancel-btn" id="cancel-edit-btn">Cancel</button>
+                <button class="modal-btn save-btn" id="save-edit-btn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification"></div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.min.js"></script>
     <script>
         const socket = io('https://chat-0t9q.onrender.com'); // Change this to your server URL
         let userId;
         let contactId;
+        let editingMessageId = null;
 
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
@@ -227,6 +318,11 @@
         const typingIndicator = document.getElementById('typing-indicator');
         const contactName = document.getElementById('contact-name');
         const userSelectModal = document.getElementById('user-select-modal');
+        const editModal = document.getElementById('edit-modal');
+        const editInput = document.getElementById('edit-input');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const saveEditBtn = document.getElementById('save-edit-btn');
+        const notification = document.getElementById('notification');
 
         function selectUser(selectedUserId) {
             userId = selectedUserId;
@@ -234,6 +330,20 @@
             contactName.textContent = contactId;
             userSelectModal.style.display = 'none';
             socket.emit('identify', userId);
+            
+            // Clear previous messages when selecting a user
+            while (messagesContainer.firstChild) {
+                if (messagesContainer.firstChild === typingIndicator) break;
+                messagesContainer.removeChild(messagesContainer.firstChild);
+            }
+        }
+
+        function showNotification(message, duration = 3000) {
+            notification.textContent = message;
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, duration);
         }
 
         sendButton.addEventListener('click', sendMessage);
@@ -245,6 +355,23 @@
 
         messageInput.addEventListener('input', () => {
             sendButton.disabled = messageInput.value.trim().length === 0;
+            if (messageInput.value.trim().length > 0) {
+                socket.emit('typing', userId);
+            }
+        });
+
+        cancelEditBtn.addEventListener('click', () => {
+            editModal.style.display = 'none';
+            editingMessageId = null;
+        });
+
+        saveEditBtn.addEventListener('click', () => {
+            const newContent = editInput.value.trim();
+            if (newContent && editingMessageId) {
+                socket.emit('editMessage', { messageId: editingMessageId, newContent });
+                editModal.style.display = 'none';
+                editingMessageId = null;
+            }
         });
 
         function sendMessage() {
@@ -253,59 +380,133 @@
                 const messageData = {
                     sender: userId,
                     receiver: contactId,
-                    content: message
+                    content: message,
+                    timestamp: new Date()
                 };
                 socket.emit('sendMessage', messageData);
-                addMessageToUI(messageData, true);
                 messageInput.value = '';
                 sendButton.disabled = true;
             }
         }
 
         function addMessageToUI(message, isSender) {
+            const messageId = message._id;
             const messageElement = document.createElement('div');
             messageElement.classList.add('message');
             messageElement.classList.add(isSender ? 'sender' : 'receiver');
+            messageElement.setAttribute('data-id', messageId);
+
+            let optionsHtml = '';
+            if (isSender) {
+                optionsHtml = `
+                    <div class="message-options">
+                        <button class="option-btn edit-btn" onclick="editMessage('${messageId}')">Edit</button>
+                        <button class="option-btn delete-btn" onclick="deleteMessage('${messageId}')">Delete</button>
+                    </div>
+                `;
+            }
+
             messageElement.innerHTML = `
+                ${optionsHtml}
                 <div class="message-content">
                     ${message.content}
                 </div>
                 <div class="message-time">${new Date(message.timestamp).toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'})}</div>
             `;
-            messagesContainer.appendChild(messageElement);
+            
+            // Insert the message before the typing indicator
+            messagesContainer.insertBefore(messageElement, typingIndicator);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
+
+        function editMessage(messageId) {
+            const messageElement = document.querySelector(`.message[data-id="${messageId}"]`);
+            if (messageElement) {
+                const contentElement = messageElement.querySelector('.message-content');
+                editInput.value = contentElement.textContent.trim();
+                editingMessageId = messageId;
+                editModal.style.display = 'flex';
+            }
+        }
+
+        function deleteMessage(messageId) {
+            if (confirm('Are you sure you want to delete this message?')) {
+                socket.emit('deleteMessage', messageId);
+            }
+        }
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+            showNotification('Connection error. Please try again later.');
+        });
 
         socket.on('previousMessages', (messages) => {
             messages.forEach(message => {
                 addMessageToUI(message, message.sender === userId);
             });
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         });
 
         socket.on('receiveMessage', (message) => {
-            if (message.sender !== userId) {
-                addMessageToUI(message, false);
+            addMessageToUI(message, message.sender === userId);
+        });
+
+        socket.on('messageEdited', (data) => {
+            const messageElement = document.querySelector(`.message[data-id="${data.messageId}"]`);
+            if (messageElement) {
+                const contentElement = messageElement.querySelector('.message-content');
+                contentElement.textContent = data.newContent;
+            }
+        });
+
+        socket.on('messageDeleted', (messageId) => {
+            const messageElement = document.querySelector(`.message[data-id="${messageId}"]`);
+            if (messageElement) {
+                messageElement.style.opacity = '0.5';
+                messageElement.querySelector('.message-content').textContent = 'This message was deleted';
+                const optionsElement = messageElement.querySelector('.message-options');
+                if (optionsElement) {
+                    optionsElement.remove();
+                }
             }
         });
 
         let typingTimeout;
         messageInput.addEventListener('input', () => {
+            if (messageInput.value.trim().length > 0) {
                 socket.emit('typing', userId);
-        clearTimeout(typingTimeout);
-        typingTimeout = setTimeout(() => {
-            socket.emit('stopTyping');
-        }, 1000);
-    });
+            }
+            
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                socket.emit('stopTyping');
+            }, 1000);
+        });
 
-    socket.on('typing', (userId) => {
-        if (userId !== userId) {
-            typingIndicator.textContent = 'User is typing...';
-        }
-    });
+        socket.on('typing', (typingUserId) => {
+            if (typingUserId !== userId) {
+                typingIndicator.textContent = `${contactId} is typing...`;
+            }
+        });
 
-    socket.on('stopTyping', () => {
-        typingIndicator.textContent = '';
-    });
-</script>
+        socket.on('stopTyping', () => {
+            typingIndicator.textContent = '';
+        });
+
+        socket.on('error', (error) => {
+            console.error('Server error:', error);
+            showNotification(`Error: ${error.message}`);
+        });
+
+        // Handle disconnection
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            showNotification('Disconnected from server. Trying to reconnect...');
+        });
+    </script>
 </body>
 </html>
