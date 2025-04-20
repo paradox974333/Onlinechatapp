@@ -9,8 +9,8 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: process.env.CLIENT_URL || 'https://paradox974333.github.io',
-        methods: ['GET', 'POST', 'DELETE'],
+        origin: process.env.CLIENT_URL || '*',
+        methods: ['GET', 'POST', 'DELETE', 'PUT'],
         allowedHeaders: ['Content-Type']
     }
 });
@@ -32,15 +32,26 @@ const messageSchema = new mongoose.Schema({
     receiver: { type: String, required: true },
     content: { type: String, required: true },
     timestamp: { type: Date, default: Date.now },
-    isDeleted: { type: Boolean, default: false }
+    isDeleted: { type: Boolean, default: false },
+    edited: { type: Boolean, default: false }
 });
+
 const Message = mongoose.model('Message', messageSchema);
+
+// Define schema for active users (for better handling of typing indicators)
+const activeUsersSchema = new mongoose.Schema({
+    userId: { type: String, required: true, unique: true },
+    socketId: { type: String, required: true },
+    lastActive: { type: Date, default: Date.now }
+});
+
+const ActiveUser = mongoose.model('ActiveUser', activeUsersSchema);
 
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'https://paradox974333.github.io',
-    methods: ['GET', 'POST', 'DELETE'],
+    origin: process.env.CLIENT_URL || '*',
+    methods: ['GET', 'POST', 'DELETE', 'PUT'],
     allowedHeaders: ['Content-Type']
 }));
 app.use(express.static('public'));
@@ -51,12 +62,43 @@ function emitError(socket, error) {
     socket.emit('error', { message: 'An error occurred', details: error.message });
 }
 
-// WebSocket connection handling
-io.on('connection', (socket) => {
-    console.log('New client connected');
+// Basic route for checking server status
+app.get('/', (req, res) => {
+    res.send('Chat server is running');
+});
 
+// API route to get messages
+app.get('/api/messages', async (req, res) => {
+    try {
+        const { sender, receiver } = req.query;
+        const query = {};
+        
+        if (sender) query.sender = sender;
+        if (receiver) query.receiver = receiver;
+        
+        const messages = await Message.find(query).sort({ timestamp: 1 });
+        res.json(messages);
+    } catch (err) {
+        console.error('Error fetching messages:', err);
+        res.status(500).json({ message: 'Server error', details: err.message });
+    }
+});
+
+// WebSocket connection handling
+io.on('connection', async (socket) => {
+    console.log('New client connected:', socket.id);
+
+    // Handle user identification
     socket.on('identify', async (userId) => {
         try {
+            // Store active user
+            await ActiveUser.findOneAndUpdate(
+                { userId },
+                { userId, socketId: socket.id, lastActive: new Date() },
+                { upsert: true, new: true }
+            );
+
+            // Get user's conversations
             const messages = await Message.find({
                 $or: [
                     { sender: userId },
@@ -66,11 +108,13 @@ io.on('connection', (socket) => {
             }).sort({ timestamp: 1 });
 
             socket.emit('previousMessages', messages);
+            console.log(`User ${userId} identified`);
         } catch (err) {
             emitError(socket, err);
         }
     });
 
+    // Handle sending messages
     socket.on('sendMessage', async (data) => {
         try {
             const { sender, receiver, content } = data;
@@ -78,11 +122,13 @@ io.on('connection', (socket) => {
             await message.save();
 
             io.emit('receiveMessage', message);
+            console.log(`Message sent from ${sender} to ${receiver}`);
         } catch (err) {
             emitError(socket, err);
         }
     });
 
+    // Handle deleting messages
     socket.on('deleteMessage', async (messageId) => {
         try {
             const message = await Message.findById(messageId);
@@ -91,6 +137,7 @@ io.on('connection', (socket) => {
             }
 
             message.isDeleted = true;
+            message.content = 'This message was deleted';
             await message.save();
 
             io.emit('messageDeleted', messageId);
@@ -100,6 +147,7 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Handle editing messages
     socket.on('editMessage', async (data) => {
         try {
             const { messageId, newContent } = data;
@@ -109,14 +157,17 @@ io.on('connection', (socket) => {
             }
 
             message.content = newContent;
+            message.edited = true;
             await message.save();
 
             io.emit('messageEdited', { messageId, newContent });
+            console.log(`Message ${messageId} edited`);
         } catch (err) {
             emitError(socket, err);
         }
     });
 
+    // Handle typing indicators
     socket.on('typing', (userId) => {
         socket.broadcast.emit('typing', userId);
     });
@@ -125,10 +176,28 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('stopTyping');
     });
 
-    socket.on('disconnect', () => {
-        console.log('Client disconnected');
+    // Handle disconnection
+    socket.on('disconnect', async () => {
+        try {
+            // Find user by socket ID and remove from active users
+            await ActiveUser.findOneAndDelete({ socketId: socket.id });
+            console.log('Client disconnected:', socket.id);
+        } catch (err) {
+            console.error('Error handling disconnect:', err);
+        }
     });
 });
+
+// Cleanup inactive users periodically (every 10 minutes)
+setInterval(async () => {
+    try {
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+        await ActiveUser.deleteMany({ lastActive: { $lt: tenMinutesAgo } });
+        console.log('Cleaned up inactive users');
+    } catch (err) {
+        console.error('Error cleaning up inactive users:', err);
+    }
+}, 10 * 60 * 1000);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -139,4 +208,16 @@ app.use((err, req, res, next) => {
 // Start the server
 server.listen(port, () => {
     console.log(`Server running on port ${port}`);
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', async () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    server.close(() => {
+        console.log('Server closed');
+        mongoose.connection.close(false, () => {
+            console.log('MongoDB connection closed');
+            process.exit(0);
+        });
+    });
 });
